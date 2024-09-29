@@ -1,6 +1,7 @@
-import {Controller, Get, Res, HttpStatus, Logger, Inject} from '@nestjs/common';
+import {Controller, Get, Res, Query, HttpStatus, Logger, Inject} from '@nestjs/common';
 import {Response} from 'express';
 import {DynamoWordService} from './dynamoWord.service';
+import {GetWordsQueryDto} from "./GetWordsQueryDto";
 
 @Controller('listWords')
 export class AppController {
@@ -16,10 +17,12 @@ export class AppController {
 
 
   @Get()
-  async getWords(@Res() res: Response): Promise<void> {
-    this.logger.log('try start+++++++++++++++++++++');
+  async getWords(@Res() res: Response,
+                 @Query() query: GetWordsQueryDto  // 使用 DTO 作为查询参数
+  ): Promise<void> {
+    this.logger.log(`Query=====: ${JSON.stringify(query)}`); // 输出结果到日志
     try {
-      const words = await this.dynamoWordService.getWords();
+      const words = await this.dynamoWordService.getWords(query);
       res.status(HttpStatus.OK).json(words);
     } catch (error) {
       this.logger.error('Error =====', error);

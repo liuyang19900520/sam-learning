@@ -41,6 +41,12 @@ let cachedServer: any;
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, new ExpressAdapter(expressApp));
+  // Enable CORS globally
+  app.enableCors({
+    origin: '*', // You can specify the origin here, e.g., 'http://localhost:5173'
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    credentials: true,
+  });
   await app.init();
   return serverlessExpress.createServer(expressApp);
 }

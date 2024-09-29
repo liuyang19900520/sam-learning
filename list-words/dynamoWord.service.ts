@@ -1,6 +1,7 @@
 import {Injectable, Logger} from '@nestjs/common';
 import {DynamoDBClient} from '@aws-sdk/client-dynamodb';
 import {DynamoDBDocumentClient, ScanCommand} from '@aws-sdk/lib-dynamodb';
+import {GetWordsQueryDto} from "./GetWordsQueryDto";
 
 @Injectable()
 export class DynamoWordService {
@@ -22,7 +23,9 @@ export class DynamoWordService {
   }
 
   // 获取 DynamoDB 中的数据
-  async getWords(): Promise<any[]> {
+  async getWords(query: GetWordsQueryDto): Promise<any[]> {
+
+    const { word, freq, typ, lvl } = query;
     const params = {
       TableName: 'words', // 替换为你的 DynamoDB 表名
       ProjectionExpression: 'word, freq' // 只返回 word 和 freq 字段

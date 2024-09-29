@@ -56,8 +56,6 @@ Resources:
         EntryPoints:
           - app.ts
         External:
-          - "class-validator"
-          - "class-transformer"
           - "@nestjs/websockets"
           - "@nestjs/microservices"
 
