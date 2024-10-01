@@ -22,24 +22,74 @@ export class DynamoWordService {
 
   }
 
-  // 获取 DynamoDB 中的数据
   async getWords(query: GetWordsQueryDto): Promise<any[]> {
-
     const { word, freq, typ, lvl } = query;
-    const params = {
+
+    // 将 freq 转换为 number，如果它存在
+    const freqNumber = freq ? Number(freq) : undefined
+
+    // 构建基础的 DynamoDB Scan 参数
+    const params: any = {
       TableName: 'words', // 替换为你的 DynamoDB 表名
-      ProjectionExpression: 'word, freq' // 只返回 word 和 freq 字段
+      ProjectionExpression: '#lvl, word, freq, typ', // 使用别名 #lvl
+      ExpressionAttributeNames: { '#lvl': 'lvl' },  // lvl 是保留字，使用别名
     };
 
-    this.logger.log('Executing ScanCommand for DynamoDB');
+    const filters: string[] = [];
+    params.ExpressionAttributeValues = {};
+
+    // 模糊查询 word
+    if (word) {
+      filters.push('contains(#word, :word)');
+      params.ExpressionAttributeValues[':word'] = word;
+      params.ExpressionAttributeNames['#word'] = 'word'; // 使用别名 #word
+    }
+
+    // 查询 freq 大于传入值
+    if (freqNumber !== undefined && !isNaN(freqNumber)) {
+      filters.push('freq > :freq');
+      params.ExpressionAttributeValues[':freq'] = freqNumber;
+    }
+
+    // 查询 typ 在传入的数组中
+    if (typ && typ.length > 0) {
+      const typFilters: string[] = [];
+      typ.forEach((item, index) => {
+        const key = `:typ${index}`;
+        typFilters.push(key);
+        params.ExpressionAttributeValues[key] = item;
+      });
+      filters.push(`typ IN (${typFilters.join(', ')})`);
+    }
+
+    // 查询 lvl 在传入的数组中
+    if (lvl && lvl.length > 0) {
+      const lvlFilters: string[] = [];
+      lvl.forEach((item, index) => {
+        const key = `:lvl${index}`;
+        lvlFilters.push(key);
+        params.ExpressionAttributeValues[key] = item;
+      });
+      filters.push(`#lvl IN (${lvlFilters.join(', ')})`); // 使用别名 #lvl
+    }
+
+    // 拼接过滤条件
+    if (filters.length > 0) {
+      params.FilterExpression = filters.join(' AND ');
+    } else {
+      delete params.ExpressionAttributeValues;
+    }
+
+    this.logger.log('Executing ScanCommand with params:', params);
 
     try {
       const data = await this.docClient.send(new ScanCommand(params));
-      this.logger.log(`DynamoDB Scan returned: ${JSON.stringify(data.Items)}`); // 输出结果到日志
+      this.logger.log(`DynamoDB Scan returned: ${JSON.stringify(data.Items)}`);
       return data.Items || [];
     } catch (error) {
       this.logger.error('Error fetching data from DynamoDB', error);
       throw error;
     }
   }
+
 }

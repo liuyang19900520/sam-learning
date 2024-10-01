@@ -13,13 +13,11 @@ export class GetWordsQueryDto {
 
   @IsOptional()
   @IsArray()  // typ 是数组
-  @Type(() => Number)  // 确保 typ 数组的每个值是 number
-  @ArrayMinSize(1)
-  typ?: number[];
+  @IsString({ each: true }) // 确保每个元素都是字符串
+  typ?: string[];
 
   @IsOptional()
   @IsArray()  // lvl 也是数组
-  @Type(() => Number)
-  @ArrayMinSize(1)
-  lvl?: number[];
+  @IsString({ each: true }) // 确保每个元素都是字符串
+  lvl?: string[];
 }

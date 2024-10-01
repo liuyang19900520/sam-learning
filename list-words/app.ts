@@ -35,17 +35,25 @@ import serverlessExpress from 'aws-serverless-express';
 import {ExpressAdapter} from '@nestjs/platform-express';
 import express from 'express';
 import {APIGatewayProxyEvent, Context} from 'aws-lambda';
+import {ValidationPipe} from "@nestjs/common";
 
 const expressApp = express();
 let cachedServer: any;
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, new ExpressAdapter(expressApp));
-  // Enable CORS globally
+
+  app.useGlobalPipes(
+    new ValidationPipe({
+      transform: true,  // 确保参数被转换为正确的类型
+    }),
+  );
+
   app.enableCors({
-    origin: '*', // You can specify the origin here, e.g., 'http://localhost:5173'
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-    credentials: true,
+    origin: 'http://localhost:5173',  // 允许的前端来源
+    methods: 'GET,POST,PUT,DELETE,OPTIONS',  // 允许的请求方法
+    allowedHeaders: 'Content-Type, Authorization',  // 允许的请求头
+    credentials: true,  // 允许发送 cookies
   });
   await app.init();
   return serverlessExpress.createServer(expressApp);
