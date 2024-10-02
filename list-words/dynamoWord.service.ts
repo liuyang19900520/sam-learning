@@ -2,6 +2,7 @@ import {Injectable, Logger} from '@nestjs/common';
 import {DynamoDBClient} from '@aws-sdk/client-dynamodb';
 import {DynamoDBDocumentClient, ScanCommand} from '@aws-sdk/lib-dynamodb';
 import {GetWordsQueryDto} from "./GetWordsQueryDto";
+import { UpdateCommand } from "@aws-sdk/lib-dynamodb";  // 导入 UpdateCommand
 
 @Injectable()
 export class DynamoWordService {
@@ -91,5 +92,53 @@ export class DynamoWordService {
       throw error;
     }
   }
+
+
+
+
+async bulkUpdateWords(queryArray: GetWordsQueryDto[]): Promise<any[]> {
+  const updatedItems = [];
+
+  // 遍历传入的 GetWordsQueryDto[] 数组
+  for (const query of queryArray) {
+  const { word, typ, lvl } = query;
+
+  if (!word) {
+    this.logger.warn(`No word provided, skipping item: ${JSON.stringify(query)}`);
+    continue;
+  }
+
+  // 构建 DynamoDB Update 参数
+  const params: any = {
+    TableName: 'words', // 替换为你的 DynamoDB 表名
+    Key: { 'word': word },  // 使用 word 作为查询的 Key
+    UpdateExpression: 'SET #typ = :typ, #lvl = :lvl',  // 更新 typ 和 lvl
+    ExpressionAttributeNames: {
+      '#typ': 'typ',  // typ 作为 DynamoDB 中的字段名
+      '#lvl': 'lvl'   // lvl 作为 DynamoDB 中的字段名
+    },
+    ExpressionAttributeValues: {
+      ':typ': typ,  // 新的 typ 值
+      ':lvl': lvl   // 新的 lvl 值
+    },
+    ReturnValues: 'ALL_NEW'  // 返回更新后的新值
+  };
+
+  this.logger.log('Executing UpdateCommand with params:', params);
+
+  try {
+    const result = await this.docClient.send(new UpdateCommand(params));
+    this.logger.log(`DynamoDB Update returned: ${JSON.stringify(result.Attributes)}`);
+    updatedItems.push(result.Attributes);
+  } catch (error) {
+    this.logger.error(`Error updating word ${word} in DynamoDB`, error);
+  }
+}
+
+// 返回所有更新后的项目
+return updatedItems;
+}
+
+
 
 }

@@ -47,6 +47,11 @@ Resources:
           Properties:
             Path: /listWords
             Method: any
+        AnotherEndpoint: # 添加另一个URL路径
+          Type: Api
+          Properties:
+            Path: /listWords/bulk  # 自定义的新路径
+            Method: any
     Metadata: # Manage esbuild properties
       BuildMethod: esbuild
       BuildProperties:

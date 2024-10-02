@@ -46,4 +46,18 @@ export class AppController {
       res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({message: 'Error fetching data'});
     }
   }
+
+
+  @Post("/bulk")
+  async getWordsBulk(@Res() res: Response,@Body() inputData: GetWordsQueryDto[] ): Promise<void> {
+    this.logger.log(`inputData=====: ${JSON.stringify(inputData)}`); // 输出结果到日志
+
+    try {
+      const words = await this.dynamoWordService.bulkUpdateWords(inputData);
+      res.status(HttpStatus.OK).json('OK');
+    } catch (error) {
+      this.logger.error('Error =====', error);
+      res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({message: 'Error updating data'});
+    }
+  }
 }
